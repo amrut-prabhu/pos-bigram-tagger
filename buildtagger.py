@@ -8,6 +8,7 @@ import numpy as np
 
 from collections import defaultdict
 import pprint
+import json
 
 def train_model(train_file, model_file):
     # write your code here. You can add functions as well.
@@ -18,32 +19,17 @@ def train_model(train_file, model_file):
     transition, emission = get_probs(word_tag_freq, tag_freq, bitag_freq)
     # print_probs(transition, emission)
 
+    save_model(model_file, transition, emission) 
+    
     print('Finished...')
-
-def get_probs(word_tag_freq, tag_freq, bitag_freq):   
-    """
-    Transition probabilities: a_ij
-    Probability of transitioning from state s_i to state s_j (states represent POS tags)
-    a(tag J | tag I) = count(tag I, tag J - in this order) / count(tag I)
-    Usage: transition[(tag I, tag J)]
-    """
-    transition = defaultdict(int)
-
-    """
-    Emission probabilities: b_i(o_t)
-    Probability of observing an observation o_t from state s_i (observations are words)
-    b(word T | tag I) = count(word T and tag I) / count(tag I)
-    Usage: emission[(word, tag)]
-    """
-    emission = defaultdict(int)
     
-    for (prev_tag, curr_tag) in bitag_freq:
-        transition[(prev_tag, curr_tag)] =  float(bitag_freq[(prev_tag, curr_tag)]) / tag_freq[prev_tag]
-    
-    for (word, tag) in word_tag_freq:
-        emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag]
+def save_model(model_file, transition, emission):
+    transition_json = dict((':'.join(k), v) for k,v in transition.items())
+    emission_json = dict((':'.join(k), v) for k,v in emission.items())
 
-    return transition, emission    
+    model = [transition_json, emission_json]
+    with open(model_file, 'w') as fout:
+        json.dump(model, fout)
 
 def get_freqs(train_file):   
     reader = open(train_file)
@@ -81,6 +67,31 @@ def get_freqs(train_file):
         bitag_freq[(prev_tag, END_MARKER)] += 1
 
     return word_tag_freq, tag_freq, bitag_freq
+
+def get_probs(word_tag_freq, tag_freq, bitag_freq):   
+    """
+    Transition probabilities: a_ij
+    Probability of transitioning from state s_i to state s_j (states represent POS tags)
+    a(tag J | tag I) = count(tag I, tag J - in this order) / count(tag I)
+    Usage: transition[(tag I, tag J)]
+    """
+    transition = defaultdict(int)
+
+    """
+    Emission probabilities: b_i(o_t)
+    Probability of observing an observation o_t from state s_i (observations are words)
+    b(word T | tag I) = count(word T and tag I) / count(tag I)
+    Usage: emission[(word, tag)]
+    """
+    emission = defaultdict(int)
+    
+    for (prev_tag, curr_tag) in bitag_freq:
+        transition[(prev_tag, curr_tag)] =  float(bitag_freq[(prev_tag, curr_tag)]) / tag_freq[prev_tag]
+    
+    for (word, tag) in word_tag_freq:
+        emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag]
+
+    return transition, emission    
 
 def splitWordAndTag(string):
     splitIdx = string.rfind('/')
