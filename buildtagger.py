@@ -11,23 +11,25 @@ import pprint
 import json
 
 def train_model(train_file, model_file):
-    # write your code here. You can add functions as well.
-
     word_tag_freq, tag_freq, bitag_freq = get_freqs(train_file)
     # print_freqs(word_tag_freq, tag_freq, bitag_freq)
 
     transition, emission = get_probs(word_tag_freq, tag_freq, bitag_freq)
     # print_probs(transition, emission)
 
-    save_model(model_file, transition, emission) 
+    START_MARKER = '<s>'
+    tags = list(tag_freq.keys())
+    tags.remove(START_MARKER)
+
+    save_model(model_file, transition, emission, tags) 
     
     print('Finished...')
     
-def save_model(model_file, transition, emission):
+def save_model(model_file, transition, emission, tags):
     transition_json = dict((':'.join(k), v) for k,v in transition.items())
     emission_json = dict((':'.join(k), v) for k,v in emission.items())
 
-    model = [transition_json, emission_json]
+    model = [transition_json, emission_json, tags]
     with open(model_file, 'w') as fout:
         json.dump(model, fout)
 

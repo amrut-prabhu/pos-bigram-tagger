@@ -1,4 +1,7 @@
 *.code-workspace
 .vscode/
+
 *.pdf
+
 model-file 
+sents.out
