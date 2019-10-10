@@ -13,85 +13,85 @@ import _pickle as pickle
 START_MARKER = '<s>'
 END_MARKER = '</s>'
 
-# All tags that appear in the corpus
-tags = set()
-# All words that appear in the corpus
+# All words and tags that appear in the corpus
 words = set()
+tags = set()
 
-# TODO: change name
-word_to_tag = {}
+# Frequency of tag
+tag_freq = defaultdict(int)
 
-""" Back-off Probabilities """
+# Frequency of (tag I, tag J) tuples, where tag J is the tag appearing directly after tag I
+bitag_freq = defaultdict(int)
+
+# Frequency of (word, tag) pairs
+word_tag_freq = defaultdict(int)
+
+# The set of tags that have been assigned to the word in the corpus
+tags_for_word = {}
+
+# Number of tokens (words) in the corpus
+num_tokens = 0
+
+"""
+Transition probabilities: a_ij
+Probability of transitioning from state s_i to state s_j (states represent POS tags)
+a(tag J | tag I) = count(tag I, tag J - in this order) / count(tag I)
+Usage: transition[(tag I, tag J)]
+"""
+transition = defaultdict(int)
+
+"""
+Emission probabilities: b_i(o_t)
+Probability of observing an observation o_t from state s_i (observations are words)
+b(word T | tag I) = count(word T and tag I) / count(tag I)
+Usage: emission[(word, tag)]
+"""
+emission = defaultdict(int)
+
+# Back-off Probabilities
 transition_backoff = defaultdict(int)
 emission_backoff = defaultdict(int)
 
-""" Singleton counts """
+# Singleton counts
 transition_singleton = defaultdict(int)
 emission_singleton = defaultdict(int)
 
-""" 1-count smoothed probabilities """
-transition_one_count = defaultdict(int)
+# 1-count smoothed probabilities
+transition_smoothed = defaultdict(int)
 emission_smoothed = defaultdict(int)
 
-# Num tokens (words)
-num_tokens = 0
-
 def train_model(train_file, model_file):
-    word_tag_freq, tag_freq, bitag_freq = get_freqs(train_file)
+    compute_freqs(train_file)
+    compute_basic_probs()
 
-    transition, emission = get_probs(word_tag_freq, tag_freq, bitag_freq)
+    compute_backoff_probs()
+    compute_transition_singletons()
+    compute_smoothed_probs(train_file)
 
-    compute_backoff()
-    compute_transition_singleton(tag_freq, word_tag_freq)
-    compute_smoothed_probabilities(train_file, bitag_freq, tag_freq, word_tag_freq)
-
-    save_model(model_file, transition, emission, tags, word_tag_freq, tag_freq, bitag_freq) 
+    save_model(model_file) 
     
     print('Finished...')
-    
-def save_model(model_file, transition, emission, tags, word_tag_freq, tag_freq, bitag_freq):
-    model = {
-        "tags" : tags, 
-        "transition": transition,
-        "emission": emission,
-        "tag_freq": tag_freq, 
-        "bitag_freq": bitag_freq,
 
-        "word_to_tag" : word_to_tag,
-        "transition_backoff" : transition_backoff, 
-        "emission_backoff" : emission_backoff,
-        "transition_singleton" : transition_singleton,
-        "emission_singleton" : emission_singleton,
-        "transition_smoothed" : transition_one_count,
-        "emission_smoothed" : emission_smoothed,
-        "num_tokens" : num_tokens
-    }
-
-    output = open(model_file, 'wb')
-    pickle.dump(model, output)
-    output.close()
-
-def compute_backoff():
+def compute_backoff_probs():
     V = len(tags)
 
     for word in emission_backoff:
-        emission_backoff[word] = float(1 + emission_backoff[word]) / float(num_tokens + V)
+        emission_backoff[word] = float(1 + emission_backoff[word]) / (num_tokens + V)
 
     for tag in transition_backoff:
-        transition_backoff[tag] = float(transition_backoff[tag]) / float(num_tokens)
+        transition_backoff[tag] = float(transition_backoff[tag]) / num_tokens
 
-def compute_transition_singleton(tag_freq, word_tag_freq):
+def compute_transition_singletons():
     for tag in tags:
         if tag_freq[tag] == 1:
             transition_singleton[tag] += 1
 
     for word in words:
         for tag in tags:
-            word_tag = (word, tag)
-            if word_tag in word_tag_freq and word_tag_freq[word_tag] == 1:
+            if (word, tag) in word_tag_freq and word_tag_freq[(word, tag)] == 1:
                 emission_singleton[tag] += 1
 
-def compute_smoothed_probabilities(train_file, bitag_freq, tag_freq, word_tag_freq):
+def compute_smoothed_probs(train_file):
     reader = open(train_file)
     train_lines = reader.readlines()
     reader.close()
@@ -101,40 +101,42 @@ def compute_smoothed_probabilities(train_file, bitag_freq, tag_freq, word_tag_fr
         cur_word_tag_pairs = cur_line.split(' ')
 
         prev_tag = START_MARKER
+
         for j in range(0, len(cur_word_tag_pairs)):
             word, tag = splitWordAndTag(cur_word_tag_pairs[j])
 
-            bitag = (prev_tag, tag)
+            LAMBDA = 1 + transition_singleton[prev_tag]
 
-            lamda = 1 + transition_singleton[prev_tag]
-            transition_one_count[bitag] = \
-                float(bitag_freq[bitag] + lamda * transition_backoff[tag]) / float(tag_freq[prev_tag] + lamda) # math.log(
+            transition_smoothed[(prev_tag, tag)] = \
+                float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA) # math.log(
 
             prev_tag = tag
 
-    for word, tags_set in word_to_tag.items():
-        for tag in tags_set:
+    for word, assigned_tags in tags_for_word.items():
+        for tag in assigned_tags:
             word_tag = (word, tag)
 
-            lamda = 1 + emission_singleton[tag]
-            emission_smoothed[word_tag] = \
-                float(word_tag_freq[word_tag] + lamda * emission_backoff[word]) / float(tag_freq[tag] + lamda) # math.log(
+            LAMBDA = 1 + emission_singleton[tag]
 
-def get_freqs(train_file):   
-    global num_tokens 
+            emission_smoothed[word_tag] = \
+                float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA) # math.log(
+
+def compute_basic_probs():   
+    global transition, emission
+    
+    num_tags = len(tags)
+    for (prev_tag, curr_tag) in bitag_freq:
+        transition[(prev_tag, curr_tag)] =  float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag]) # math.log(
+    
+    for (word, tag) in word_tag_freq:
+        emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag] # math.log(
+
+def compute_freqs(train_file):   
+    global num_tokens, tag_freq, bitag_freq, word_tag_freq
 
     reader = open(train_file)
     train_lines = reader.readlines()
     reader.close()
-
-    # Frequency of (word, tag) tuples
-    word_tag_freq = defaultdict(int)
-
-    # Frequency of tag
-    tag_freq = defaultdict(int)
-
-    # Frequency of (tag I, tag J) tuples, where tag J is the tag assigned directly after tag I
-    bitag_freq = defaultdict(int)
 
     for i in range(0, len(train_lines)):
         cur_line = train_lines[i].strip()
@@ -151,8 +153,8 @@ def get_freqs(train_file):
             word, tag = splitWordAndTag(cur_word_tag_pairs[j])
 
             tag_freq[tag] += 1
-            word_tag_freq[(word, tag)] += 1
             bitag_freq[(prev_tag, tag)] += 1 # order of the sequence matters
+            word_tag_freq[(word, tag)] += 1
 
             num_tokens += 1
 
@@ -162,47 +164,47 @@ def get_freqs(train_file):
             transition_backoff[tag] += 1
             emission_backoff[word] += 1
 
-            if word not in word_to_tag:
-                word_to_tag[word] = set()
-            word_to_tag[word].add(tag)
+            # To speed up viterbi calculation
+            # TODO: compare without
+            if word not in tags_for_word:
+                tags_for_word[word] = set()
+            tags_for_word[word].add(tag)
 
             prev_tag = tag
 
         bitag_freq[(prev_tag, END_MARKER)] += 1
-
-    return word_tag_freq, tag_freq, bitag_freq
-
-def get_probs(word_tag_freq, tag_freq, bitag_freq):   
-    """
-    Transition probabilities: a_ij
-    Probability of transitioning from state s_i to state s_j (states represent POS tags)
-    a(tag J | tag I) = count(tag I, tag J - in this order) / count(tag I)
-    Usage: transition[(tag I, tag J)]
-    """
-    transition = defaultdict(int)
-
-    """
-    Emission probabilities: b_i(o_t)
-    Probability of observing an observation o_t from state s_i (observations are words)
-    b(word T | tag I) = count(word T and tag I) / count(tag I)
-    Usage: emission[(word, tag)]
-    """
-    emission = defaultdict(int)
-    
-    V = len(tags)
-    for (prev_tag, curr_tag) in bitag_freq:
-        transition[(prev_tag, curr_tag)] =  float(1 + bitag_freq[(prev_tag, curr_tag)]) / float(V + tag_freq[prev_tag]) # math.log(
-    
-    for (word, tag) in word_tag_freq:
-        emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / float(tag_freq[tag]) # math.log(
-
-    return transition, emission    
 
 def splitWordAndTag(string):
     splitIdx = string.rfind('/')
     word = string[:splitIdx]
     tag = string[splitIdx+1:]
     return word, tag
+
+def save_model(model_file):
+    model = {
+        "tag_freq": tag_freq, 
+        "bitag_freq": bitag_freq,
+
+        "tags" : tags, 
+        "num_tokens" : num_tokens,
+        "tags_for_word" : tags_for_word,
+
+        "transition": transition,
+        "emission": emission,
+
+        "transition_backoff" : transition_backoff, 
+        "emission_backoff" : emission_backoff,
+
+        "transition_singleton" : transition_singleton,
+        "emission_singleton" : emission_singleton,
+        
+        "transition_smoothed" : transition_smoothed,
+        "emission_smoothed" : emission_smoothed
+    }
+
+    output = open(model_file, 'wb')
+    pickle.dump(model, output)
+    output.close()
 
 if __name__ == "__main__":
     # make no changes here

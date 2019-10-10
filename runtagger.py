@@ -14,7 +14,7 @@ END_MARKER = '</s>'
 
 transition = {} 
 emission = {}
-word_to_tag = {}
+tags_for_word = {}
 tag_freq = {}
 tags = {}
 
@@ -22,7 +22,7 @@ transition_backoff = {}
 emission_backoff = {}
 transition_singleton = {}
 emission_singleton = {}
-transition_one_count = {}
+transition_smoothed = {}
 emission_smoothed = {}
 bitag_freq = {}
 num_tokens = {}
@@ -54,8 +54,8 @@ def get_tag_freq(u):
 
 def get_tags(word):
     global tags
-    if word in word_to_tag:
-        return list(word_to_tag[word])
+    if word in tags_for_word:
+        return list(tags_for_word[word])
     return list(tags)
 
 def get_emission_backoff(word):
@@ -73,9 +73,9 @@ def get_smoothed_emission(word, tag):
         return float(lamda * get_emission_backoff(word)) / float(tag_freq[tag] + lamda) # math.log(
 
 def get_smoothed_transition(tag_j, tag_i):
-    if (tag_j, tag_i) in transition_one_count:
+    if (tag_j, tag_i) in transition_smoothed:
         """ transition probability P(tag_i | tag_i - 1) """
-        transition_probability = transition_one_count[(tag_j, tag_i)]
+        transition_probability = transition_smoothed[(tag_j, tag_i)]
     else:
         """ Smoothed transition probability """
         tag_freq = get_tag_freq(tag_j)
@@ -158,39 +158,35 @@ def run_viterbi(obs, transition, emission):
     return ' '.join([word + '/' + tag for word, tag in zip(obs, viterbi_tags)])
 
 def load_model(model_file):
-    global transition
-    global emission
-    global word_to_tag
-    global tag_freq
-    global tags
+    global tag_freq, bitag_freq
+    global tags, tags_for_word, num_tokens
+    global transition, emission
 
-    global transition_backoff
-    global emission_backoff
-    global transition_singleton
-    global emission_singleton
-    global transition_one_count
-    global emission_smoothed
-    global bitag_freq
-    global num_tokens
-    
+    global transition_backoff, emission_backoff
+    global transition_singleton, emission_singleton
+    global transition_smoothed, emission_smoothed
+
     f = open(model_file, "rb")
-    dictionaries = pickle.load(f)
+    model = pickle.load(f)
 
-    transition = dictionaries["transition"]
-    emission = dictionaries["emission"]
-    word_to_tag = dictionaries["word_to_tag"]
-    tag_freq = dictionaries["tag_freq"]
-    tags = dictionaries["tags"]
+    tag_freq = model["tag_freq"]
+    bitag_freq = model["bitag_freq"]
 
-    """ New probabilities """
-    transition_backoff = dictionaries["transition_backoff"]
-    emission_backoff = dictionaries["emission_backoff"]
-    transition_singleton = dictionaries["transition_singleton"]
-    emission_singleton = dictionaries["emission_singleton"]
-    transition_one_count = dictionaries["transition_smoothed"]
-    emission_smoothed = dictionaries["emission_smoothed"]
-    bitag_freq = dictionaries["bitag_freq"]
-    num_tokens = dictionaries["num_tokens"]
+    tags = model["tags"]
+    tags_for_word = model["tags_for_word"]
+    num_tokens = model["num_tokens"]
+    
+    transition = model["transition"]
+    emission = model["emission"]
+
+    transition_backoff = model["transition_backoff"]
+    emission_backoff = model["emission_backoff"]
+    
+    transition_singleton = model["transition_singleton"]
+    emission_singleton = model["emission_singleton"]
+    
+    transition_smoothed = model["transition_smoothed"]
+    emission_smoothed = model["emission_smoothed"]
 
 if __name__ == "__main__":
     # make no changes here
