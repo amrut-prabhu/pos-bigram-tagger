@@ -128,11 +128,9 @@ def compute_basic_probs():
     
     num_tags = len(tags)
     for (prev_tag, curr_tag) in bitag_freq:
-        # transition[(prev_tag, curr_tag)] =  float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag])
         transition[(prev_tag, curr_tag)] =  math.log(float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag]))
     
     for (word, tag) in word_tag_freq:
-        # emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag]
         emission[(word, tag)] = math.log(float(word_tag_freq[(word, tag)]) / tag_freq[tag])
 
 def compute_freqs(train_file):   
