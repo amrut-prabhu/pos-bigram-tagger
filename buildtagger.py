@@ -61,12 +61,13 @@ transition_smoothed = defaultdict(int)
 emission_smoothed = defaultdict(int)
 
 def train_model(train_file, model_file):
-    compute_freqs(train_file)
-    compute_basic_probs()
+    for i in range(5):
+        compute_freqs(train_file)
+        compute_basic_probs()
 
-    compute_backoff_probs()
-    compute_transition_singletons()
-    compute_smoothed_probs(train_file)
+        compute_backoff_probs()
+        compute_transition_singletons()
+        compute_smoothed_probs(train_file)
 
     save_model(model_file) 
     
