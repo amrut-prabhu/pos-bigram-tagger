@@ -208,6 +208,28 @@ def save_model(model_file):
     pickle.dump(model, output)
     output.close()
 
+def untag_file(in_file):
+    reader = open(in_file)
+    lines = reader.readlines()
+    reader.close()
+
+    out_file = in_file.split('.')[0] + ".test"
+    output_writer = open(out_file, 'w')
+
+    for i in range(0, len(lines)):
+        cur_line = lines[i].strip()
+        cur_word_tag_pairs = cur_line.split(' ')
+
+        sentence_words = []
+        for j in range(0, len(cur_word_tag_pairs)):
+            word, tag = splitWordAndTag(cur_word_tag_pairs[j])
+            sentence_words.append(word)
+
+        untagged_sentence = ' '.join([word for word in sentence_words])
+        output_writer.write(untagged_sentence + '\n')
+    
+    output_writer.close()
+
 if __name__ == "__main__":
     # make no changes here
     train_file = sys.argv[1]

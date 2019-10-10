@@ -4,23 +4,26 @@
 
 **Training**:
 ```sh
-python buildtagger.py sents.train model-file
+python buildtagger.py <train_file_absolute_path> <model_file_absolute_path>
 
-python buildtagger.py en.train model-file-en
+# Example:
+python buildtagger.py sents.train model-file
 ```
 
 **Testing**:
 ```sh
-python runtagger.py sents.test model-file sents.out
+python runtagger.py <test_file_absolute_path> <model_file_absolute_path> <output_file_absolute_path>
 
-python runtagger.py en.test model-file-en en.out
+# Example:
+python runtagger.py sents.test model-file sents.out
 ```
 
 **Evaluation**:
 ```sh
-python eval.py sents.out sents.answer
+python eval.py <output_file_absolute_path> <reference_file_absolute_path>
 
-python eval.py en.out en.answer
+# Example:
+python eval.py sents.out sents.answer
 ```
 
 ## Penn Treebank Tagset

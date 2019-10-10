@@ -12,15 +12,28 @@ echo "======$COMMIT_HASH======" >> $TEST_RESULTS
 rm -f model-file sents.out
 python buildtagger.py sents.train model-file
 python runtagger.py sents.test model-file sents.out
-ACCURACY_SENTS=$(python eval.py sents.out sents.answer)
-echo $ACCURACY_SENTS
-echo "sents $ACCURACY_SENTS" >> $TEST_RESULTS
-
+ACCURACY=$(python eval.py sents.out sents.answer)
+echo $ACCURACY
+echo "sents $ACCURACY" >> $TEST_RESULTS
 echo
 
-rm -f model-file-en en.out
-python buildtagger.py en.train model-file-en
-python runtagger.py en.test model-file-en en.out
-ACCURACY_EN=$(python eval.py en.out en.answer)
-echo $ACCURACY_EN
-echo "en $ACCURACY_EN" >> $TEST_RESULTS
+rm -f 2.out
+python runtagger.py 2.test model-file 2.out
+ACCURACY=$(python eval.py 2.out 2.answer)
+echo $ACCURACY
+echo "Test2 $ACCURACY" >> $TEST_RESULTS
+echo
+
+rm -f 3.out
+python runtagger.py 3.test model-file 3.out
+ACCURACY=$(python eval.py 3.out 3.answer)
+echo $ACCURACY
+echo "Test3 $ACCURACY" >> $TEST_RESULTS
+echo
+
+rm -f 4.out
+python runtagger.py 4.test model-file 4.out
+ACCURACY=$(python eval.py 4.out 4.answer)
+echo $ACCURACY
+echo "Test4 $ACCURACY" >> $TEST_RESULTS
+echo
