@@ -58,9 +58,10 @@ def get_tag_freq(u):
 
 # done
 def get_tags(word):
+    global tags
     if word in word_to_tag:
-        return word_to_tag[word]
-    return tags
+        return list(word_to_tag[word])
+    return list(tags)
 
 # done
 def get_emission_backoff(word):
@@ -106,7 +107,7 @@ def run_viterbi(obs, transition, emission):
     viterbi = []
 
     global tags
-    states = list(tags)
+    # states = list(tags)
     # for st in states:
     #     viterbi[0][st] = {
     #         "prob": get_smoothed_transition(START_MARKER, st) * get_smoothed_emission(obs[0], st), # +
@@ -115,6 +116,8 @@ def run_viterbi(obs, transition, emission):
         
     for t in range(0, len(obs)):
         viterbi.append({})
+
+        states = get_tags(obs[t])
 
         # TODO: change this and the next loop to int
         for st in states:   # for st in get_tags(obs[t]):
@@ -133,7 +136,7 @@ def run_viterbi(obs, transition, emission):
 
                 # max_viterbi = HMM.transition_minimum
 
-                for prev_state in states:  # for st in get_tags(obs[t - 1]):
+                for prev_state in get_tags(obs[t - 1]): # states:
                     transition_prob = viterbi[t - 1][prev_state]["prob"] * get_smoothed_transition(prev_state, st) # +
 
                     if transition_prob > max_transition_prob:
@@ -146,13 +149,14 @@ def run_viterbi(obs, transition, emission):
                     "back_ptr": back_ptr
                 }
 
-    tags = []
+    viterbi_tags = []
 
     # Get the most probable final state and its backtrack
     max_transition_prob = -100000
     # max_transition_prob = viterbi[len(obs)][states[0]]["prob"] * transition[(states[0], END_MARKER)]
     back_ptr = None
 
+    states = get_tags(obs[-1])
     for prev_state in states:
         transition_prob = viterbi[-1][prev_state]["prob"] * get_smoothed_transition(prev_state, END_MARKER)
 
@@ -160,18 +164,19 @@ def run_viterbi(obs, transition, emission):
             max_transition_prob = transition_prob
             back_ptr = prev_state
             
-    tags.append(prev_state)
-    current = prev_state
+    viterbi_tags.append(back_ptr)
+    current = back_ptr
 
     # Follow the backtrack till the first observation
     for t in range(len(viterbi) - 1, 0, -1):
-        tags.insert(0, viterbi[t][current]["back_ptr"])
+        viterbi_tags.insert(0, viterbi[t][current]["back_ptr"])
         current = viterbi[t][current]["back_ptr"]
+
 
     # TODO: take log of probabilities, when generating them in buildtagger
     # Instead of P1 * P2, do log(P1) + log(P2)
 
-    return ' '.join([word + '/' + tag for word, tag in zip(obs, tags)])
+    return ' '.join([word + '/' + tag for word, tag in zip(obs, viterbi_tags)])
 
 def load_model(model_file):
     global transition
