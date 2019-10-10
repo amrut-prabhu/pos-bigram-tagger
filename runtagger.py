@@ -9,6 +9,7 @@ import numpy as np
 from collections import defaultdict
 import _pickle as pickle
 
+DEFAULT_TRANSITION_BACKOFF = 0.000000001
 MIN_TRANSITION = -99999999
 
 # Markers for start and end of sentence
@@ -68,11 +69,11 @@ def run_viterbi(obs):
     for t in range(0, len(obs)):
         viterbi.append({})
 
-        # TODO: change this and the next loop to int
         for st in get_tags_for_word(obs[t]): 
             if t == 0:
                 viterbi[t][st] = {
-                    "prob": get_smoothed_transition(START_MARKER, st) * get_smoothed_emission(obs[t], st), # +
+                    # "prob": get_smoothed_transition(START_MARKER, st) * get_smoothed_emission(obs[t], st), 
+                    "prob": get_smoothed_transition(START_MARKER, st) + get_smoothed_emission(obs[t], st), 
                     "back_ptr": None
                 }
             else:
@@ -81,7 +82,8 @@ def run_viterbi(obs):
                         
                 # Set most probable state and value of probability
                 viterbi[t][st] = {
-                    "prob": max_transition_prob * get_smoothed_emission(obs[t], st), # +
+                    # "prob": max_transition_prob * get_smoothed_emission(obs[t], st), 
+                    "prob": max_transition_prob + get_smoothed_emission(obs[t], st), 
                     "back_ptr": back_ptr
                 }
 
@@ -105,7 +107,8 @@ def get_max_transition(viterbi, curr_obs, curr_state, curr_state_idx):
     back_ptr = None
 
     for prev_state in get_tags_for_word(curr_obs):
-        transition_prob = viterbi[curr_state_idx][prev_state]["prob"] * get_smoothed_transition(prev_state, curr_state)
+        # transition_prob = viterbi[curr_state_idx][prev_state]["prob"] * get_smoothed_transition(prev_state, curr_state)
+        transition_prob = viterbi[curr_state_idx][prev_state]["prob"] + get_smoothed_transition(prev_state, curr_state)
 
         if transition_prob > max_transition_prob:
             max_transition_prob = transition_prob
@@ -123,22 +126,24 @@ def get_emission_backoff(word):
         return emission_backoff[word]
 
     num_tags = len(tags)
-    return float(1) / float(num_tokens + num_tags)
+    return float(1) / (num_tokens + num_tags)
 
 def get_smoothed_emission(word, tag):
     if (word, tag) in emission_smoothed:
         return emission_smoothed[(word, tag)]
     else:
         lamda = 1 + emission_singleton.get(tag, 0)
-        return float(lamda * get_emission_backoff(word)) / float(tag_freq[tag] + lamda) # math.log(
+        # return float(lamda * get_emission_backoff(word)) / (tag_freq[tag] + lamda)
+        return math.log(float(lamda * get_emission_backoff(word)) / (tag_freq[tag] + lamda))
 
 def get_smoothed_transition(prev_tag, tag):
     if (prev_tag, tag) in transition_smoothed:
         transition_probability = transition_smoothed[(prev_tag, tag)]
     else:
         lamda = 1 + transition_singleton.get(prev_tag, 0)
-        transition_probability = float(lamda * transition_backoff[tag]) / float(tag_freq[prev_tag] + lamda) # math.log(
-    
+        # transition_probability = float(lamda * transition_backoff[tag]) / (tag_freq[prev_tag] + lamda)
+        transition_probability = math.log(float(lamda * transition_backoff.get(tag, DEFAULT_TRANSITION_BACKOFF)) / (tag_freq[prev_tag] + lamda))
+
     return transition_probability
 
 def load_model(model_file):

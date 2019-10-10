@@ -108,7 +108,8 @@ def compute_smoothed_probs(train_file):
             LAMBDA = 1 + transition_singleton[prev_tag]
 
             transition_smoothed[(prev_tag, tag)] = \
-                float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA) # math.log(
+                math.log(float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA))
+                # float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA)
 
             prev_tag = tag
 
@@ -119,17 +120,20 @@ def compute_smoothed_probs(train_file):
             LAMBDA = 1 + emission_singleton[tag]
 
             emission_smoothed[word_tag] = \
-                float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA) # math.log(
+                math.log(float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA))
+                # float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA)
 
 def compute_basic_probs():   
     global transition, emission
     
     num_tags = len(tags)
     for (prev_tag, curr_tag) in bitag_freq:
-        transition[(prev_tag, curr_tag)] =  float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag]) # math.log(
+        # transition[(prev_tag, curr_tag)] =  float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag])
+        transition[(prev_tag, curr_tag)] =  math.log(float(1 + bitag_freq[(prev_tag, curr_tag)]) / (num_tags + tag_freq[prev_tag]))
     
     for (word, tag) in word_tag_freq:
-        emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag] # math.log(
+        # emission[(word, tag)] = float(word_tag_freq[(word, tag)]) / tag_freq[tag]
+        emission[(word, tag)] = math.log(float(word_tag_freq[(word, tag)]) / tag_freq[tag])
 
 def compute_freqs(train_file):   
     global num_tokens, tag_freq, bitag_freq, word_tag_freq
@@ -165,7 +169,6 @@ def compute_freqs(train_file):
             emission_backoff[word] += 1
 
             # To speed up viterbi calculation
-            # TODO: compare without
             if word not in tags_for_word:
                 tags_for_word[word] = set()
             tags_for_word[word].add(tag)
