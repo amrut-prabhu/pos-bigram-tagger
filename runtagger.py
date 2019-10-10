@@ -129,15 +129,15 @@ def get_smoothed_emission(word, tag):
     if (word, tag) in emission_smoothed:
         return emission_smoothed[(word, tag)]
     else:
-        lamda = 1 + emission_singleton.get(tag, 0)
-        return math.log(float(lamda * get_emission_backoff(word)) / (tag_freq[tag] + lamda))
+        LAMBDA = 1 + emission_singleton.get(tag, 0)
+        return math.log(float(LAMBDA * get_emission_backoff(word)) / (tag_freq[tag] + LAMBDA))
 
 def get_smoothed_transition(prev_tag, tag):
     if (prev_tag, tag) in transition_smoothed:
         transition_probability = transition_smoothed[(prev_tag, tag)]
     else:
-        lamda = 1 + transition_singleton.get(prev_tag, 0)
-        transition_probability = math.log(float(lamda * transition_backoff.get(tag, DEFAULT_TRANSITION_BACKOFF)) / (tag_freq[prev_tag] + lamda))
+        LAMBDA = 1 + transition_singleton.get(prev_tag, 0)
+        transition_probability = math.log(float(LAMBDA) / (tag_freq[prev_tag] + LAMBDA))
 
     return transition_probability
 
@@ -160,8 +160,8 @@ def load_model(model_file):
     tags_for_word = model["tags_for_word"]
     num_tokens = model["num_tokens"]
     
-    transition = model["transition"]
-    emission = model["emission"]
+    # transition = model["transition"]
+    # emission = model["emission"]
 
     transition_backoff = model["transition_backoff"]
     emission_backoff = model["emission_backoff"]

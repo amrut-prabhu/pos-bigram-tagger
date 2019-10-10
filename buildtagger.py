@@ -63,7 +63,7 @@ emission_smoothed = defaultdict(int)
 def train_model(train_file, model_file):
     for i in range(5):
         compute_freqs(train_file)
-        compute_basic_probs()
+        # compute_basic_probs()
 
         compute_backoff_probs()
         compute_transition_singletons()
@@ -74,10 +74,10 @@ def train_model(train_file, model_file):
     print('Finished...')
 
 def compute_backoff_probs():
-    V = len(tags)
+    num_tags = len(tags)
 
     for word in emission_backoff:
-        emission_backoff[word] = float(1 + emission_backoff[word]) / (num_tokens + V)
+        emission_backoff[word] = float(1 + emission_backoff[word]) / (num_tokens + num_tags)
 
     for tag in transition_backoff:
         transition_backoff[tag] = float(transition_backoff[tag]) / num_tokens
@@ -110,7 +110,6 @@ def compute_smoothed_probs(train_file):
 
             transition_smoothed[(prev_tag, tag)] = \
                 math.log(float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA))
-                # float(bitag_freq[(prev_tag, tag)] + LAMBDA * transition_backoff[tag]) / (tag_freq[prev_tag] + LAMBDA)
 
             prev_tag = tag
 
@@ -122,7 +121,6 @@ def compute_smoothed_probs(train_file):
 
             emission_smoothed[word_tag] = \
                 math.log(float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA))
-                # float(word_tag_freq[word_tag] + LAMBDA * emission_backoff[word]) / (tag_freq[tag] + LAMBDA)
 
 def compute_basic_probs():   
     global transition, emission
@@ -191,8 +189,8 @@ def save_model(model_file):
         "num_tokens" : num_tokens,
         "tags_for_word" : tags_for_word,
 
-        "transition": transition,
-        "emission": emission,
+        # "transition": transition,
+        # "emission": emission,
 
         "transition_backoff" : transition_backoff, 
         "emission_backoff" : emission_backoff,
