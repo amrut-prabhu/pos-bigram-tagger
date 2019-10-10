@@ -1,4 +1,4 @@
-# python3.5 runtagger.py <test_file_absolute_path> <model_file_absolute_path> <output_file_absolute_path>
+# python runtagger.py <test_file_absolute_path> <model_file_absolute_path> <output_file_absolute_path>
 
 import os
 import math
@@ -6,11 +6,9 @@ import sys
 import datetime
 import numpy as np
 
-from collections import defaultdict
-import pprint
-# import json
 import _pickle as pickle
 
+# Markers for start and end of sentence
 START_MARKER = '<s>'
 END_MARKER = '</s>'
 
@@ -31,7 +29,6 @@ num_tokens = {}
 
 def tag_sentence(test_file, model_file, out_file):
     load_model(model_file)
-    # print_probs(transition, emission)
 
     reader = open(test_file)
     test_lines = reader.readlines()
@@ -50,20 +47,17 @@ def tag_sentence(test_file, model_file, out_file):
 
     print('Finished...')
 
-# done
 def get_tag_freq(u):
     if u in tag_freq:
         return tag_freq[u]
     return 0
 
-# done
 def get_tags(word):
     global tags
     if word in word_to_tag:
         return list(word_to_tag[word])
     return list(tags)
 
-# done
 def get_emission_backoff(word):
     if word in emission_backoff:
         return emission_backoff[word]
@@ -71,7 +65,6 @@ def get_emission_backoff(word):
     V = len(tags)
     return float(1) / float(num_tokens + V)
 
-# done
 def get_smoothed_emission(word, tag):
     if (word, tag) in emission_smoothed:
         return emission_smoothed[(word, tag)]
@@ -79,7 +72,6 @@ def get_smoothed_emission(word, tag):
         lamda = 1 + emission_singleton.get(tag, 0)
         return float(lamda * get_emission_backoff(word)) / float(tag_freq[tag] + lamda) # math.log(
 
-# done
 def get_smoothed_transition(tag_j, tag_i):
     if (tag_j, tag_i) in transition_one_count:
         """ transition probability P(tag_i | tag_i - 1) """
@@ -107,20 +99,12 @@ def run_viterbi(obs, transition, emission):
     viterbi = []
 
     global tags
-    # states = list(tags)
-    # for st in states:
-    #     viterbi[0][st] = {
-    #         "prob": get_smoothed_transition(START_MARKER, st) * get_smoothed_emission(obs[0], st), # +
-    #         "back_ptr": None
-    #     }
         
     for t in range(0, len(obs)):
         viterbi.append({})
 
-        states = get_tags(obs[t])
-
         # TODO: change this and the next loop to int
-        for st in states:   # for st in get_tags(obs[t]):
+        for st in get_tags(obs[t]): 
             """ Base case needs to be handled here """
             if t == 0:
                 """ # calculate score using P(Ci|'^', '^') and P(Wj|Ci) """
@@ -129,14 +113,11 @@ def run_viterbi(obs, transition, emission):
                     "back_ptr": None
                 }
             else:
-
                 # Find state that maximises transition probability from the previous state
                 max_transition_prob = -100000
                 back_ptr = None
 
-                # max_viterbi = HMM.transition_minimum
-
-                for prev_state in get_tags(obs[t - 1]): # states:
+                for prev_state in get_tags(obs[t - 1]):
                     transition_prob = viterbi[t - 1][prev_state]["prob"] * get_smoothed_transition(prev_state, st) # +
 
                     if transition_prob > max_transition_prob:
@@ -153,7 +134,6 @@ def run_viterbi(obs, transition, emission):
 
     # Get the most probable final state and its backtrack
     max_transition_prob = -100000
-    # max_transition_prob = viterbi[len(obs)][states[0]]["prob"] * transition[(states[0], END_MARKER)]
     back_ptr = None
 
     states = get_tags(obs[-1])
@@ -171,7 +151,6 @@ def run_viterbi(obs, transition, emission):
     for t in range(len(viterbi) - 1, 0, -1):
         viterbi_tags.insert(0, viterbi[t][current]["back_ptr"])
         current = viterbi[t][current]["back_ptr"]
-
 
     # TODO: take log of probabilities, when generating them in buildtagger
     # Instead of P1 * P2, do log(P1) + log(P2)
@@ -212,30 +191,6 @@ def load_model(model_file):
     emission_smoothed = dictionaries["emission_smoothed"]
     bitag_freq = dictionaries["bitag_freq"]
     num_tokens = dictionaries["num_tokens"]
-
-    # with open(model_file) as json_file:
-    #     model = json.load(json_file)
-    
-    # [transition_json, emission_json, tags] = model
-
-    # # TODO: store keys as string instead of tuple?
-    # emission = defaultdict(lambda:0.000000001)
-    # for k,v in emission_json.items():
-    #     [word, tag] = k.rsplit(':', 1)
-    #     emission[(word,tag)] = v
-
-    # transition = defaultdict(lambda:0.000000001)
-    # for k,v in transition_json.items():
-    #     [word, tag] = k.rsplit(':', 1)
-    #     transition[(word,tag)] = v
-
-    # return transition, emission, tags
-
-def print_probs(transition, emission):
-    print("\ntransition:")
-    pprint.pprint(transition)
-    print("\nemission:")
-    pprint.pprint(emission)
 
 if __name__ == "__main__":
     # make no changes here

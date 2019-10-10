@@ -1,4 +1,4 @@
-# python3.5 buildtagger.py <train_file_absolute_path> <model_file_absolute_path>
+# python buildtagger.py <train_file_absolute_path> <model_file_absolute_path>
 
 import os
 import math
@@ -7,8 +7,6 @@ import datetime
 import numpy as np
 
 from collections import defaultdict
-import pprint
-# import json
 import _pickle as pickle
 
 # Markers for start and end of sentence
@@ -40,10 +38,8 @@ num_tokens = 0
 
 def train_model(train_file, model_file):
     word_tag_freq, tag_freq, bitag_freq = get_freqs(train_file)
-    # print_freqs(word_tag_freq, tag_freq, bitag_freq)
 
     transition, emission = get_probs(word_tag_freq, tag_freq, bitag_freq)
-    # print_probs(transition, emission)
 
     compute_backoff()
     compute_transition_singleton(tag_freq, word_tag_freq)
@@ -74,13 +70,6 @@ def save_model(model_file, transition, emission, tags, word_tag_freq, tag_freq, 
     output = open(model_file, 'wb')
     pickle.dump(model, output)
     output.close()
-
-    # transition_json = dict((':'.join(k), v) for k,v in transition.items())
-    # emission_json = dict((':'.join(k), v) for k,v in emission.items())
-
-    # model = [transition_json, emission_json, list(tags)]
-    # with open(model_file, 'w') as fout:
-    #     json.dump(model, fout)
 
 def compute_backoff():
     V = len(tags)
@@ -154,7 +143,7 @@ def get_freqs(train_file):
         prev_tag = START_MARKER
         tag_freq[START_MARKER] += 1
 
-        # TODO: keep these????
+        # TODO: keep these?
         num_tokens += 1 
         # tags.add(START_MARKER)
 
@@ -214,20 +203,6 @@ def splitWordAndTag(string):
     word = string[:splitIdx]
     tag = string[splitIdx+1:]
     return word, tag
-
-def print_freqs(word_tag_freq, tag_freq, bitag_freq):
-    print("\nword_tag_freq:")
-    pprint.pprint(word_tag_freq)
-    print("\ntag_freq:")
-    pprint.pprint(tag_freq)
-    print("\nbitag_freq:")
-    pprint.pprint(bitag_freq)
-
-def print_probs(transition, emission):
-    print("\ntransition:")
-    pprint.pprint(transition)
-    print("\nemission:")
-    pprint.pprint(emission)
 
 if __name__ == "__main__":
     # make no changes here
