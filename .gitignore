@@ -2,6 +2,6 @@
 .vscode/
 
 *.pdf
-
 model-file*
 *.out
+*.txt
