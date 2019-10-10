@@ -8,10 +8,26 @@ import numpy as np
 
 from collections import defaultdict
 import pprint
-import json
+# import json
+import _pickle as pickle
+
+transition = {} 
+emission = {}
+word_to_tag = {}
+tag_freq = {}
+tags = {}
+
+transition_backoff = {}
+emission_backoff = {}
+transition_singleton = {}
+emission_singleton = {}
+transition_one_count = {}
+emission_smoothed = {}
+bitag_freq = {}
+num_tokens = {}
 
 def tag_sentence(test_file, model_file, out_file):
-    transition, emission, tags = load_model(model_file)
+    load_model(model_file)
     # print_probs(transition, emission)
 
     reader = open(test_file)
@@ -105,23 +121,57 @@ def run_viterbi(obs, states, transition, emission):
     return ' '.join([word + '/' + tag for word, tag in zip(obs, tags)])
 
 def load_model(model_file):
-    with open(model_file) as json_file:
-        model = json.load(json_file)
+    global transition
+    global emission
+    global word_to_tag
+    global tag_freq
+    global tags
+
+    global transition_backoff
+    global emission_backoff
+    global transition_singleton
+    global emission_singleton
+    global transition_one_count
+    global emission_smoothed
+    global bitag_freq
+    global num_tokens
     
-    [transition_json, emission_json, tags] = model
+    f = open(model_file, "rb")
+    dictionaries = pickle.load(f)
 
-    # TODO: store keys as string instead of tuple?
-    emission = defaultdict(lambda:0.000000001)
-    for k,v in emission_json.items():
-        [word, tag] = k.rsplit(':', 1)
-        emission[(word,tag)] = v
+    transition = dictionaries["transition"]
+    emission = dictionaries["emission"]
+    word_to_tag = dictionaries["word_to_tag"]
+    tag_freq = dictionaries["tag_freq"]
+    tags = dictionaries["tags"]
 
-    transition = defaultdict(lambda:0.000000001)
-    for k,v in transition_json.items():
-        [word, tag] = k.rsplit(':', 1)
-        transition[(word,tag)] = v
+    """ New probabilities """
+    transition_backoff = dictionaries["transition_backoff"]
+    emission_backoff = dictionaries["emission_backoff"]
+    transition_singleton = dictionaries["transition_singleton"]
+    emission_singleton = dictionaries["emission_singleton"]
+    transition_one_count = dictionaries["transition_smoothed"]
+    emission_smoothed = dictionaries["emission_smoothed"]
+    bitag_freq = dictionaries["bitag_freq"]
+    num_tokens = dictionaries["num_tokens"]
 
-    return transition, emission, tags
+    # with open(model_file) as json_file:
+    #     model = json.load(json_file)
+    
+    # [transition_json, emission_json, tags] = model
+
+    # # TODO: store keys as string instead of tuple?
+    # emission = defaultdict(lambda:0.000000001)
+    # for k,v in emission_json.items():
+    #     [word, tag] = k.rsplit(':', 1)
+    #     emission[(word,tag)] = v
+
+    # transition = defaultdict(lambda:0.000000001)
+    # for k,v in transition_json.items():
+    #     [word, tag] = k.rsplit(':', 1)
+    #     transition[(word,tag)] = v
+
+    # return transition, emission, tags
 
 def print_probs(transition, emission):
     print("\ntransition:")
