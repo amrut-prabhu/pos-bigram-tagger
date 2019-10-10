@@ -77,15 +77,7 @@ def run_viterbi(obs):
                 }
             else:
                 # Find state that maximises transition probability from the previous state
-                max_transition_prob = MIN_TRANSITION
-                back_ptr = None
-
-                for prev_state in get_tags_for_word(obs[t - 1]):
-                    transition_prob = viterbi[t - 1][prev_state]["prob"] * get_smoothed_transition(prev_state, st) # +
-
-                    if transition_prob > max_transition_prob:
-                        max_transition_prob = transition_prob
-                        back_ptr = prev_state
+                max_transition_prob, back_ptr =  get_max_transition(viterbi, obs[t - 1], st, t - 1)
                         
                 # Set most probable state and value of probability
                 viterbi[t][st] = {
@@ -96,16 +88,7 @@ def run_viterbi(obs):
     viterbi_tags = []
 
     # Get the most probable final state and its backtrack
-    max_transition_prob = MIN_TRANSITION
-    back_ptr = None
-
-    # TODO: extract method
-    for prev_state in get_tags_for_word(obs[-1]):
-        transition_prob = viterbi[-1][prev_state]["prob"] * get_smoothed_transition(prev_state, END_MARKER)
-
-        if transition_prob > max_transition_prob:
-            max_transition_prob = transition_prob
-            back_ptr = prev_state
+    max_transition_prob, back_ptr =  get_max_transition(viterbi, obs[-1], END_MARKER, -1)
             
     viterbi_tags.append(back_ptr)
     current = back_ptr
@@ -116,6 +99,19 @@ def run_viterbi(obs):
         current = viterbi[t][current]["back_ptr"]
 
     return ' '.join([word + '/' + tag for word, tag in zip(obs, viterbi_tags)])
+
+def get_max_transition(viterbi, curr_obs, curr_state, curr_state_idx):
+    max_transition_prob = MIN_TRANSITION
+    back_ptr = None
+
+    for prev_state in get_tags_for_word(curr_obs):
+        transition_prob = viterbi[curr_state_idx][prev_state]["prob"] * get_smoothed_transition(prev_state, curr_state)
+
+        if transition_prob > max_transition_prob:
+            max_transition_prob = transition_prob
+            back_ptr = prev_state
+
+    return max_transition_prob, back_ptr
 
 def get_tags_for_word(word):
     if word in tags_for_word:
