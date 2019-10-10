@@ -58,7 +58,6 @@ def save_model(model_file, transition, emission, tags, word_tag_freq, tag_freq, 
         "tags" : tags, 
         "transition": transition,
         "emission": emission,
-        "word_tag_freq": word_tag_freq, 
         "tag_freq": tag_freq, 
         "bitag_freq": bitag_freq,
 
@@ -157,7 +156,7 @@ def get_freqs(train_file):
 
         # TODO: keep these????
         num_tokens += 1 
-        tags.add(START_MARKER)
+        # tags.add(START_MARKER)
 
         for j in range(0, len(cur_word_tag_pairs)):
             word, tag = splitWordAndTag(cur_word_tag_pairs[j])
