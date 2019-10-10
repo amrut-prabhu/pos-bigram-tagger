@@ -111,12 +111,12 @@ def load_model(model_file):
     [transition_json, emission_json, tags] = model
 
     # TODO: store keys as string instead of tuple?
-    emission = defaultdict(int)
+    emission = defaultdict(lambda:0.000000001)
     for k,v in emission_json.items():
         [word, tag] = k.rsplit(':', 1)
         emission[(word,tag)] = v
 
-    transition = defaultdict(int)
+    transition = defaultdict(lambda:0.000000001)
     for k,v in transition_json.items():
         [word, tag] = k.rsplit(':', 1)
         transition[(word,tag)] = v
