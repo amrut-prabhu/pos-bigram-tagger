@@ -3,5 +3,5 @@
 
 *.pdf
 
-model-file 
-sents.out
+model-file*
+*.out

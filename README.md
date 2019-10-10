@@ -5,16 +5,22 @@
 **Training**:
 ```sh
 python buildtagger.py sents.train model-file
+
+python buildtagger.py en.train model-file-en
 ```
 
 **Testing**:
 ```sh
 python runtagger.py sents.test model-file sents.out
+
+python runtagger.py en.test model-file-en en.out
 ```
 
 **Evaluation**:
 ```sh
 python eval.py sents.out sents.answer
+
+python eval.py en.out en.answer
 ```
 
 ## Penn Treebank Tagset
