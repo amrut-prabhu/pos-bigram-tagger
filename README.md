@@ -30,9 +30,16 @@ python eval.py sents.out sents.answer
 
 The list of POS tags can be seen [here](https://www.clips.uantwerpen.be/pages/mbsp-tags).
 
-## Implementation
+## Results
 
-Apart from computing the standard transition probabilities and emission probabilities, and implementing the Viterbi algorithm, there is also a need to handle these cases (to improve accuracy):
+Results of the POS tagger after training on `sents.train`.
 
-- unseen words (words that do not appear the vocabulary - the training corpus) 
-- unseen transitions (sequences of tags that do not appear in the training corpus)
+| Test case    | Accuracy |
+| ------------ | -------- |
+| `sents.test` | 0.95669  |
+| `2.train`    | 0.87171  |
+| `2a.train`   | 0.86102  |
+| `2b.train`   | 0.85309  |
+| `3.train`    | 0.83947  |
+| `4.train`    | 0.94730  |
+| `5.train`    | 0.95091  |
