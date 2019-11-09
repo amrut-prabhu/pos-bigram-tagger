@@ -37,9 +37,9 @@ Results of the POS tagger after training on `sents.train`.
 | Test case    | Accuracy |
 | ------------ | -------- |
 | `sents.test` | 0.95669  |
-| `2.train`    | 0.87171  |
-| `2a.train`   | 0.86102  |
-| `2b.train`   | 0.85309  |
-| `3.train`    | 0.83947  |
-| `4.train`    | 0.94730  |
-| `5.train`    | 0.95091  |
+| `2.test`     | 0.87171  |
+| `2a.test`    | 0.86102  |
+| `2b.test`    | 0.85309  |
+| `3.test`     | 0.83947  |
+| `4.test`     | 0.94730  |
+| `5.test`     | 0.95091  |
